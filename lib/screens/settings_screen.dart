@@ -33,7 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               return _switchTile(
                 "Dark Mode",
                 currentMode == ThemeMode.dark,
-                    (value) {
+                (value) {
                   themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
                 },
               );
@@ -47,96 +47,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _navTile(Icons.security_rounded, "Security (Change Password)", () => _showChangePasswordDialog()),
           _navTile(Icons.help_outline, "Help & Support", () {}),
           const SizedBox(height: 20),
-
-          // --- Updated Professional Logout Button ---
           SizedBox(
             width: double.infinity,
-            height: 52,
-            child: OutlinedButton.icon(
-              onPressed: _showLogoutConfirmation,
-              icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 20),
-              label: const Text(
-                "Log Out",
-                style: TextStyle(
-                  color: Color(0xFFEF4444),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.06),
-                side: const BorderSide(color: Color(0xFFEF4444), width: 1.3),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 22),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              "Log Out",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
-          ],
-        ),
-        content: Text(
-          "Are you sure you want to log out of your account?",
-          style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          Expanded(
+            height: 48,
             child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: Colors.grey[300]!),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text("Cancel", style: TextStyle(color: Colors.grey[700])),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
               onPressed: () async {
-                Navigator.pop(context);
                 await _authService.signOut();
                 if (mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
+                    (route) => false,
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Log Out", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              child: const Text("Log Out", style: TextStyle(color: Colors.red)),
             ),
           ),
         ],
@@ -185,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password must be at least 8 characters")));
                   return;
                 }
-
+                
                 final success = await _authService.changePassword(currentPassController.text, newPassController.text);
                 if (mounted) {
                   Navigator.pop(context);
@@ -213,9 +142,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF2F5CFF)),
-        suffixIcon: toggleObscure != null
-            ? IconButton(icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility), onPressed: toggleObscure)
-            : null,
+        suffixIcon: toggleObscure != null 
+          ? IconButton(icon: Icon(isObscure ? Icons.visibility_off : Icons.visibility), onPressed: toggleObscure)
+          : null,
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
