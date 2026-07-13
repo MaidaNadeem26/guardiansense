@@ -46,3 +46,7 @@ app.*.map.json
 
 # Firebase generated options
 lib/firebase_options.dart
+
+# Custom Ignores for Security
+.env
+
