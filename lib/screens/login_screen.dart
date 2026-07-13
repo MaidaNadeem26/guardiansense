@@ -331,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         children: [
-          Icon(met ? Icons.check_circle_rounded : Icons.circle_outlined, 
+          Icon(met ? Icons.check_circle_rounded : Icons.circle_outlined,
                size: 12, color: met ? Colors.lightGreen : Colors.grey),
           const SizedBox(width: 6),
           Text(text, style: TextStyle(fontSize: 10, color: met ? Colors.lightGreen : Colors.grey)),
