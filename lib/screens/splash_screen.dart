@@ -1,6 +1,8 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'onboarding_screen.dart';
+import 'dashboard_screen.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,16 +12,28 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
-    // 2.5 second baad Onboarding screen pe chala jayega
+    _checkAuthState();
+  }
+
+  void _checkAuthState() {
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        );
+        if (_authService.currentUser != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          );
+        }
       }
     });
   }
@@ -43,16 +57,15 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo Container
               Container(
                 height: 120,
                 width: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.blue.withOpacity(0.25),
+                      color: Colors.blue.withValues(alpha: 0.25),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -75,7 +88,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 35),
-
               const Text(
                 "GuardianSense",
                 style: TextStyle(
@@ -86,25 +98,23 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-
               Text(
                 "A Guardian Family Network",
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 15,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 45),
-
               SizedBox(
                 width: 35,
                 height: 35,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.white.withOpacity(0.8),
+                    Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ),

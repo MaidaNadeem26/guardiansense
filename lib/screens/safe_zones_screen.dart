@@ -77,7 +77,7 @@ class _SafeZonesScreenState extends State<SafeZonesScreen> {
                         ),
                         Switch(
                           value: zone["active"] as bool,
-                          activeColor: const Color(0xFF2F5CFF),
+                          activeTrackColor: const Color(0xFF2F5CFF),
                           onChanged: (value) {
                             setState(() {
                               _zones[index]["active"] = value;

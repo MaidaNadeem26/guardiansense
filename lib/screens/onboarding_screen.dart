@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     {
       "icon": Icons.favorite_outline_rounded,
-      "iconColor": Color(0xFF5B8CFF),
+      "iconColor": const Color(0xFF5B8CFF),
       "title": "Caring real-time monitoring",
       "desc":
       "Stay connected with your loved ones through gentle and respectful monitoring.",
@@ -27,7 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     {
       "icon": Icons.notifications_active_outlined,
-      "iconColor": Color(0xFFFF9F43),
+      "iconColor": const Color(0xFFFF9F43),
       "title": "Smart safety alerts",
       "desc":
       "GuardianSense identifies unusual patterns and keeps you informed when needed.",
@@ -35,7 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     {
       "icon": Icons.groups_outlined,
-      "iconColor": Color(0xFF34B27B),
+      "iconColor": const Color(0xFF34B27B),
       "title": "Connected family network",
       "desc":
       "Bring your family together and provide support whenever it matters most.",
@@ -146,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                                 BoxShadow(
 
-                                  color: Colors.blue.withOpacity(0.15),
+                                  color: Colors.blue.withValues(alpha: 0.15),
                                   blurRadius:30,
                                   spreadRadius:5,
 
@@ -310,7 +310,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                       shadowColor:
 
-                      Colors.blue.withOpacity(0.3),
+                      Colors.blue.withValues(alpha: 0.3),
 
 
                       shape:RoundedRectangleBorder(

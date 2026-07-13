@@ -8,8 +8,6 @@ class LiveMonitoringScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondaryTextColor = isDark ? Colors.grey[400] : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.grey[800]! : const Color(0xFFF1F5F9);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
