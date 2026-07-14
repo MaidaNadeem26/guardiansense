@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../models/user_model.dart';
+import '../models/guardian_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 
@@ -153,6 +154,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _addGuardian() async {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final relationController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Add Guardian"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Name")),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone (e.g. +92...)")),
+            TextField(controller: relationController, decoration: const InputDecoration(labelText: "Relation")),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                final guardian = GuardianModel(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: nameController.text.trim(),
+                  phoneNumber: phoneController.text.trim(),
+                  relation: relationController.text.trim(),
+                );
+                await _databaseService.addGuardian(_userModel!.id, guardian);
+                if (mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -190,6 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Center(
                         child: CircleAvatar(
@@ -200,14 +241,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (!_isEditing) ...[
-                        Text(_userModel!.name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryTextColor)),
-                        const SizedBox(height: 4),
-                        const Text("Protected Member", style: TextStyle(color: Color(0xFF2F5CFF), fontSize: 12)),
+                        Center(child: Text(_userModel!.name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryTextColor))),
+                        const Center(child: Text("Protected Member", style: TextStyle(color: Color(0xFF2F5CFF), fontSize: 12))),
                         const SizedBox(height: 28),
                         _infoCard(Icons.phone_iphone_rounded, "Phone Number", _userModel!.phoneNumber ?? "Not set"),
                         _infoCard(Icons.mail_outline_rounded, "Email Address", _userModel!.email ?? "Not set"),
                         _infoCard(Icons.home_work_rounded, "Home Address", _userModel!.homeAddress ?? "Not set"),
                         _infoCard(Icons.medical_information_rounded, "Medical Notes", _userModel!.medicalNotes ?? "None"),
+
+                        const SizedBox(height: 24),
+                        const Text("Guardians", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        StreamBuilder<List<GuardianModel>>(
+                          stream: _databaseService.streamGuardians(_userModel!.id),
+                          builder: (context, snapshot) {
+                            final guardians = snapshot.data ?? [];
+                            if (guardians.isEmpty) {
+                              return const Text("No guardians added yet.", style: TextStyle(fontSize: 13, color: Colors.grey));
+                            }
+                            return Column(
+                              children: guardians.map((g) => ListTile(
+                                leading: const Icon(Icons.security, color: Colors.green),
+                                title: Text(g.name),
+                                subtitle: Text("${g.relation} • ${g.phoneNumber}"),
+                              )).toList(),
+                            );
+                          },
+                        ),
+                        TextButton.icon(
+                          onPressed: _addGuardian,
+                          icon: const Icon(Icons.add),
+                          label: const Text("Add Guardian"),
+                        ),
+
                       ] else ...[
                         _editField(_nameController, "Full Name", Icons.person_outline),
                         _editField(_phoneController, "Phone Number", Icons.phone_iphone_rounded),

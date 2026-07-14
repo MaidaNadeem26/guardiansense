@@ -1,7 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 class LocalStorageService {
-  static const String _boxName = 'cogniq_box';
+  static const String _boxName = 'guardiansense_box';
   late Box _box;
 
   Future<void> init() async {

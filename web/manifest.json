@@ -1,6 +1,6 @@
 {
-    "name": "guardian",
-    "short_name": "guardian",
+    "name": "GuardianSense",
+    "short_name": "GuardianSense",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
