@@ -2,6 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AlertService {
+  Future<void> sendWhatsApp(String phoneNumber, String message) async {
+    final normalized = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final whatsappUri = Uri.parse(
+      'https://wa.me/${normalized.replaceFirst('+', '')}?text=${Uri.encodeComponent(message)}',
+    );
+    if (!await launchUrl(whatsappUri, mode: LaunchMode.externalApplication)) {
+      throw Exception('WhatsApp could not be opened on this device.');
+    }
+  }
+
   Future<void> sendSMSFallback(String phoneNumber, String message) async {
     final Uri smsUri = Uri(
       scheme: 'sms',

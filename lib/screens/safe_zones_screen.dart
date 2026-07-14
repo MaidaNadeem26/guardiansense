@@ -1,127 +1,93 @@
-// lib/screens/safe_zones_screen.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class SafeZonesScreen extends StatefulWidget {
+import '../models/safe_zone_model.dart';
+import '../services/database_service.dart';
+import '../services/location_service.dart';
+
+class SafeZonesScreen extends StatelessWidget {
   const SafeZonesScreen({super.key});
 
   @override
-  State<SafeZonesScreen> createState() => _SafeZonesScreenState();
-}
-
-class _SafeZonesScreenState extends State<SafeZonesScreen> {
-  final List<Map<String, dynamic>> _zones = [
-    {"name": "Home", "radius": "200m", "icon": Icons.home_outlined, "active": true},
-    {"name": "Park", "radius": "150m", "icon": Icons.park_outlined, "active": true},
-    {"name": "Clinic", "radius": "100m", "icon": Icons.local_hospital_outlined, "active": false},
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
-
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      return const Scaffold(body: Center(child: Text('Sign in to manage safe zones.')));
+    }
+    final database = DatabaseService();
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text("Safe Zones"),
-        backgroundColor: Theme.of(context).cardColor,
-        foregroundColor: primaryTextColor,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: _zones.length,
-                itemBuilder: (context, index) {
-                  final zone = _zones[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: zone["active"]
-                                ? Colors.green.withValues(alpha: isDark ? 0.2 : 0.1)
-                                : Colors.grey.withValues(alpha: isDark ? 0.2 : 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            zone["icon"] as IconData,
-                            color: zone["active"] ? Colors.green : Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                zone["name"] as String,
-                                style: TextStyle(fontWeight: FontWeight.w600, color: primaryTextColor),
-                              ),
-                              Text(
-                                "Radius: ${zone["radius"]}",
-                                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: zone["active"] as bool,
-                          activeTrackColor: const Color(0xFF2F5CFF),
-                          onChanged: (value) {
-                            setState(() {
-                              _zones[index]["active"] = value;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "${zone["name"]} zone ${value ? "activated" : "deactivated"}",
-                                ),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _zones.add({
-                      "name": "New Zone",
-                      "radius": "100m",
-                      "icon": Icons.location_on_outlined,
-                      "active": true,
-                    });
-                  });
-                },
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text("Add Safe Zone", style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2F5CFF),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      appBar: AppBar(title: const Text('Safe Zones')),
+      body: StreamBuilder<List<SafeZoneModel>>(
+        stream: database.streamSafeZones(userId),
+        builder: (context, snapshot) {
+          final zones = snapshot.data ?? const <SafeZoneModel>[];
+          if (zones.isEmpty) {
+            return const Center(child: Text('No safe zones yet. Add your current location.'));
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: zones.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final zone = zones[index];
+              return ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: Colors.green.withValues(alpha: 0.08),
+                leading: const Icon(Icons.shield_outlined, color: Colors.green),
+                title: Text(zone.name),
+                subtitle: Text('${zone.radius.toStringAsFixed(0)} m radius'),
+                trailing: IconButton(
+                  tooltip: 'Remove safe zone',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => database.deleteSafeZone(userId, zone.id),
                 ),
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addCurrentLocationZone(context, userId, database),
+        icon: const Icon(Icons.add_location_alt_outlined),
+        label: const Text('Add current location'),
+      ),
+    );
+  }
+
+  Future<void> _addCurrentLocationZone(
+    BuildContext context,
+    String userId,
+    DatabaseService database,
+  ) async {
+    try {
+      final location = await LocationService().currentLocation();
+      if (!context.mounted) return;
+      final name = await _zoneName(context);
+      if (name == null || name.trim().isEmpty) return;
+      final zone = SafeZoneModel(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        name: name.trim(),
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radius: 150,
+      );
+      await database.addSafeZone(userId, zone);
+    } catch (error) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<String?> _zoneName(BuildContext context) {
+    final controller = TextEditingController(text: 'Home');
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Safe zone name'),
+        content: TextField(controller: controller, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Save')),
+        ],
       ),
     );
   }

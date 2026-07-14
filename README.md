@@ -1,12 +1,12 @@
-# Cogniq
+# GuardianSense
 
 > **An AI-powered cognitive safety assistant that detects wandering behavior and intelligently assists caregivers.**
 
 ## 📖 Overview
 
-Cogniq is an offline-first AI-powered mobile application designed to help people with dementia, Alzheimer's, autism, and other cognitive impairments who are at risk of wandering.
+GuardianSense is an offline-first AI-powered mobile application designed to help people with dementia, Alzheimer's, autism, and other cognitive impairments who are at risk of wandering.
 
-Unlike traditional GPS trackers, Cogniq doesn't just track location—it understands routines, movement patterns, and contextual behavior using AI. When unusual behavior is detected, the app first communicates with the user through voice guidance. If the situation becomes risky, it alerts the designated guardian with contextual information and live location.
+Unlike traditional GPS trackers, GuardianSense doesn't just track location—it understands routines, movement patterns, and contextual behavior using AI. When unusual behavior is detected, the app first communicates with the user through voice guidance. If the situation becomes risky, it alerts the designated guardian with contextual information and live location.
 
 ---
 

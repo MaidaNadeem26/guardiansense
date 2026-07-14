@@ -1,158 +1,230 @@
-// lib/screens/live_monitoring_screen.dart
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
-class LiveMonitoringScreen extends StatelessWidget {
+import '../models/location_record.dart';
+import '../models/safe_zone_model.dart';
+import '../services/database_service.dart';
+import '../services/location_service.dart';
+import '../services/decision_engine.dart';
+import '../services/ai_service.dart';
+
+class LiveMonitoringScreen extends StatefulWidget {
   const LiveMonitoringScreen({super.key});
 
   @override
+  State<LiveMonitoringScreen> createState() => _LiveMonitoringScreenState();
+}
+
+class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
+  final _locationService = LocationService();
+  final _database = DatabaseService();
+  final _decisionEngine = DecisionEngine();
+  final _mapController = MapController();
+  final _flutterTts = FlutterTts();
+  final _aiService = AiService();
+
+  StreamSubscription<LocationRecord>? _locationSubscription;
+  LocationRecord? _location;
+  String _status = "Waiting to start...";
+  RiskLevel _riskLevel = RiskLevel.low;
+  bool _tracking = false;
+
+  String? get _userId => FirebaseAuth.instance.currentUser?.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _flutterTts.setLanguage("ur-PK");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
+
+  @override
+  void dispose() {
+    _locationSubscription?.cancel();
+    _decisionEngine.dispose();
+    _flutterTts.stop();
+    super.dispose();
+  }
+
+  void _startTracking() {
+    final userId = _userId;
+    if (userId == null) return;
+
+    _decisionEngine.startMonitoring(userId);
+
+    _locationSubscription = _locationService.locationStream().listen((loc) {
+      if (mounted) {
+        setState(() {
+          _location = loc;
+          _mapController.move(LatLng(loc.latitude, loc.longitude), 16);
+        });
+      }
+    });
+
+    _decisionEngine.statusStream.listen((status) {
+      if (mounted) setState(() => _status = status);
+      if (status.startsWith("Guidance: ")) {
+        _speakGuidance(status.replaceFirst("Guidance: ", ""));
+      }
+    });
+
+    _decisionEngine.riskStream.listen((risk) {
+      if (mounted) setState(() => _riskLevel = risk);
+    });
+
+    setState(() => _tracking = true);
+  }
+
+  Future<void> _speakGuidance(String englishAdvice) async {
+    final urduAdvice = await _aiService.getUrduAdvice(englishAdvice);
+    await _flutterTts.speak(urduAdvice);
+  }
+
+  void _stopTracking() {
+    _decisionEngine.stopMonitoring();
+    _locationSubscription?.cancel();
+    setState(() => _tracking = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final userId = _userId;
+    if (userId == null) {
+      return const Scaffold(body: Center(child: Text('Sign in to use monitoring.')));
+    }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          "Live Monitoring",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-        ),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).cardColor,
-        foregroundColor: primaryTextColor,
-        elevation: 0,
-        shape: Border(
-          bottom: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0), width: 1),
-        ),
-      ),
-      body: Column(
-        children: [
-          // --- Enhanced Map Placeholder Area ---
-          Expanded(
-            flex: 3,
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(22, 20, 22, 16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? const Color(0xFF2F5CFF).withValues(alpha: 0.3) : const Color(0xFFDBEAFE), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2F5CFF).withValues(alpha: isDark ? 0.1 : 0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  )
-                ],
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Opacity(
-                    opacity: 0.15,
-                    child: Icon(Icons.grid_4x4_rounded, size: MediaQuery.of(context).size.width * 0.6, color: const Color(0xFF2F5CFF)),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2F5CFF).withValues(alpha: 0.15),
-                              blurRadius: 24,
-                              spreadRadius: 2,
-                            )
-                          ],
-                        ),
-                        child: const Icon(Icons.my_location_rounded, size: 36, color: Color(0xFF2F5CFF)),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        "GPS Tracking Active",
-                        style: TextStyle(color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E40AF), fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        "Google Maps integration placeholder",
-                        style: TextStyle(color: Color(0xFF60A5FA), fontSize: 11, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+    return StreamBuilder<List<SafeZoneModel>>(
+      stream: _database.streamSafeZones(userId),
+      builder: (context, snapshot) {
+        final zones = snapshot.data ?? [];
+        final center = _location == null
+            ? const LatLng(33.6844, 73.0479)
+            : LatLng(_location!.latitude, _location!.longitude);
 
-          // --- Vitals & Telemetry Feed ---
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 12),
-                    child: Text(
-                      "Telemetry & Current Status",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: primaryTextColor),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(),
+        return Scaffold(
+          appBar: AppBar(title: const Text('Live Monitoring'), centerTitle: true),
+          body: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(initialCenter: center, initialZoom: _location == null ? 12 : 16),
                       children: [
-                        _statusRow(context, Icons.fmd_good_rounded, "Location", "Home - Safe Zone", const Color(0xFF2F5CFF)),
-                        _statusRow(context, Icons.favorite_rounded, "Heart Rate", "76 BPM", const Color(0xFFEF4444)),
-                        _statusRow(context, Icons.directions_walk_rounded, "Current Activity", "Walking Mode", const Color(0xFF10B981)),
-                        _statusRow(context, Icons.battery_charging_full_rounded, "Device Battery", "82% Connected", const Color(0xFFF59E0B)),
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        ),
+                        CircleLayer(
+                          circles: zones
+                              .map((zone) => CircleMarker(
+                                    point: LatLng(zone.latitude, zone.longitude),
+                                    radius: zone.radius,
+                                    useRadiusInMeter: true,
+                                    color: Colors.green.withValues(alpha: 0.16),
+                                    borderColor: Colors.green,
+                                    borderStrokeWidth: 2,
+                                  ))
+                              .toList(),
+                        ),
+                        if (_location != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(_location!.latitude, _location!.longitude),
+                                width: 48,
+                                height: 48,
+                                child: const Icon(Icons.my_location, color: Color(0xFF2F5CFF), size: 42),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _statusCard(),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _tracking ? _stopTracking : _startTracking,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _tracking ? Colors.red : const Color(0xFF2F5CFF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: Icon(_tracking ? Icons.stop_circle_outlined : Icons.play_arrow_rounded),
+                        label: Text(_tracking ? 'Stop Monitoring' : 'Start GuardianSense AI'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _statusRow(BuildContext context, IconData icon, String label, String value, Color themeColor) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? Colors.white : const Color(0xFF334155);
-    final secondaryTextColor = isDark ? Colors.grey[400] : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.grey[800]! : const Color(0xFFF1F5F9);
+  Widget _statusCard() {
+    Color riskColor;
+    switch (_riskLevel) {
+      case RiskLevel.high: riskColor = Colors.red; break;
+      case RiskLevel.medium: riskColor = Colors.orange; break;
+      case RiskLevel.low:
+      default: riskColor = Colors.green; break;
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: themeColor.withValues(alpha: isDark ? 0.2 : 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: themeColor, size: 20),
+          Row(
+            children: [
+              Icon(Icons.security, color: riskColor),
+              const SizedBox(width: 12),
+              Text(
+                "Risk Level: ${_riskLevel.name.toUpperCase()}",
+                style: TextStyle(fontWeight: FontWeight.bold, color: riskColor),
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Text(
-            label,
-            style: TextStyle(color: secondaryTextColor, fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: primaryTextColor),
+          const Divider(height: 24),
+          Row(
+            children: [
+              const Icon(Icons.info_outline, size: 20, color: Colors.grey),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _status,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
           ),
         ],
       ),
