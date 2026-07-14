@@ -13,7 +13,7 @@ class GemmaApiService {
       throw Exception('API Key not found. Check your .env file.');
     }
 
-    // 2. The Gemma API Endpoint 
+    // 2. The Gemma API Endpoint
     // Notice the key is passed directly in the URL as a query parameter
     final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemma-2-9b-it:generateContent?key=$apiKey');
 
