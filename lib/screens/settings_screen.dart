@@ -53,13 +53,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: OutlinedButton(
               onPressed: () async {
                 await _authService.signOut();
-                if (mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
+                if (!context.mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.red),
@@ -116,12 +115,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
                 
                 final success = await _authService.changePassword(currentPassController.text, newPassController.text);
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(success ? "Password updated successfully" : "Update failed. Check current password.")),
-                  );
-                }
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(success ? "Password updated successfully" : "Update failed. Check current password.")),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2F5CFF),

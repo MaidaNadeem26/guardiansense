@@ -100,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 final verified = await _authService.verifyPassword(passwordController.text);
-                if (mounted) Navigator.pop(context, verified);
+                if (context.mounted) Navigator.pop(context, verified);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2F5CFF),
@@ -116,9 +116,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       setState(() => _isEditing = true);
     } else if (result == false) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Incorrect password. Access denied.")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Incorrect password. Access denied.")));
     }
   }
 
@@ -138,14 +137,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       await _databaseService.saveUser(updatedUser);
+      if (!mounted) return;
       setState(() {
         _userModel = updatedUser;
         _isEditing = false;
         _isLoading = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated successfully")));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated successfully")));
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -183,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   relation: relationController.text.trim(),
                 );
                 await _databaseService.addGuardian(_userModel!.id, guardian);
-                if (mounted) Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
               }
             },
             child: const Text("Add"),
@@ -212,12 +210,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await _authService.signOut();
-              if (mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
           )
         ],

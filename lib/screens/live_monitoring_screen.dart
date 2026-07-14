@@ -190,8 +190,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
     switch (_riskLevel) {
       case RiskLevel.high: riskColor = Colors.red; break;
       case RiskLevel.medium: riskColor = Colors.orange; break;
-      case RiskLevel.low:
-      default: riskColor = Colors.green; break;
+      case RiskLevel.low: riskColor = Colors.green; break;
     }
 
     return Container(

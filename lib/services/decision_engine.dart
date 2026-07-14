@@ -1,21 +1,15 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'ai_service.dart';
 import 'location_service.dart';
 import 'database_service.dart';
 import 'alert_service.dart';
-import 'notification_service.dart';
-import '../models/user_model.dart';
 import '../models/location_record.dart';
-import '../models/safe_zone_model.dart';
-import '../models/guardian_model.dart';
 
 class DecisionEngine {
   final LocationService _locationService = LocationService();
   final AiService _aiService = AiService();
   final DatabaseService _databaseService = DatabaseService();
   final AlertService _alertService = AlertService();
-  final NotificationService _notificationService = NotificationService();
 
   StreamSubscription? _locationSubscription;
   String? _currentUserId;
